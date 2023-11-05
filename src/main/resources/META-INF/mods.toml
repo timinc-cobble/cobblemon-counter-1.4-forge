@@ -3,28 +3,28 @@ loaderVersion = "[4,)"
 license = "MIT"
 
 [[mods]]
-modId = "cobblemon_forge_mdk"
+modId = "cobbled_counter"
 version = "1.0.0"
-displayName = "Cobblemon Forge Template Sidemod"
+displayName = "Cobblemon Counter"
 description = '''
-
+Counts things in Cobblemon
 '''
 
-[[dependencies.cobblemon_forge_mdk]]
+[[dependencies.cobbled_counter]]
 modId = "minecraft"
 mandatory = true
 versionRange = "[1.20.1]"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.cobblemon_forge_mdk]]
+[[dependencies.cobbled_counter]]
 modId = "forge"
 mandatory = true
 versionRange = "[47,)"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.cobblemon_forge_mdk]]
+[[dependencies.cobbled_counter]]
 modId = "cobblemon"
 mandatory = true
 versionRange = "[1.4.0,)"

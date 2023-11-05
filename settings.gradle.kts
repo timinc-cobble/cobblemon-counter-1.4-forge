@@ -1,3 +1,5 @@
+rootProject.name = "cobblemon-counter-1.4-forge"
+
 pluginManagement {
     repositories {
         maven("https://maven.fabricmc.net/")

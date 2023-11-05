@@ -6,8 +6,8 @@ plugins {
 }
 
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = property("maven_group")!!
+version = property("mod_version")!!
 
 architectury {
     platformSetupLoomIde()
@@ -31,17 +31,10 @@ repositories {
 }
 
 dependencies {
-    minecraft("net.minecraft:minecraft:1.20.1")
+    minecraft("net.minecraft:minecraft:${property("mc_version")}")
     mappings(loom.officialMojangMappings())
-    forge("net.minecraftforge:forge:1.20.1-47.2.0")
+    forge("net.minecraftforge:forge:${property("forge_version")}")
 
-    modImplementation("com.cobblemon:forge:1.4.0+1.20.1")
-    implementation("thedarkcolour:kotlinforforge:4.5.0")
-
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-}
-
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
+    modImplementation("com.cobblemon:forge:${property("cobblemon_version")}")
+    implementation("thedarkcolour:kotlinforforge:${property("kff_version")}")
 }

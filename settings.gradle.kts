@@ -1,4 +1,4 @@
-rootProject.name = "cobblemon-counter-1.4-forge"
+rootProject.name = "cobblemon-counter"
 
 pluginManagement {
     repositories {

@@ -35,6 +35,7 @@ dependencies {
     mappings(loom.officialMojangMappings())
     forge("net.minecraftforge:forge:${property("forge_version")}")
 
-    modImplementation("com.cobblemon:forge:${property("cobblemon_version")}")
+//    modImplementation("com.cobblemon:forge:${property("cobblemon_version")}")
+    modImplementation(files("libs/Cobblemon-forge-1.4.1+1.20.1-SNAPSHOT.jar"))
     implementation("thedarkcolour:kotlinforforge:${property("kff_version")}")
 }

@@ -23,10 +23,16 @@ import us.timinc.mc.cobblemon.counter.store.CaptureStreak
 import us.timinc.mc.cobblemon.counter.store.KoCount
 import us.timinc.mc.cobblemon.counter.store.KoStreak
 import java.util.*
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
+import us.timinc.mc.cobblemon.counter.config.CounterConfig
 
 @Mod(Counter.MOD_ID)
 object Counter {
     const val MOD_ID = "cobbled_counter"
+
+    private var logger: Logger = LogManager.getLogger(MOD_ID)
+    private var config : CounterConfig = CounterConfig.Builder.load()
 
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
     object Registration {
@@ -161,6 +167,8 @@ object Counter {
             data.extraData.getOrPut(CaptureStreak.NAME) { CaptureStreak() } as CaptureStreak
         captureStreak.add(species)
 
+        info("Player ${event.player.displayName.string} captured a $species streak(${captureStreak.count}) count(${captureCount.get(species)})")
+
         Cobblemon.playerData.saveSingle(data)
     }
 
@@ -180,7 +188,14 @@ object Counter {
             koCount.add(species)
             koStreak.add(species)
 
+            info("Player ${player.displayName.string} KO'd a $species streak(${koStreak.count}) count(${koCount.get(species)})")
+
             Cobblemon.playerData.saveSingle(data)
         }
+    }
+
+    fun info(msg: String) {
+        if (!config.debug) return
+        logger.info(msg)
     }
 }

@@ -3,7 +3,9 @@ package us.timinc.mc.cobblemon.counter
 import com.cobblemon.mod.common.Cobblemon
 import com.cobblemon.mod.common.api.events.CobblemonEvents
 import com.cobblemon.mod.common.api.events.battles.BattleFaintedEvent
+import com.cobblemon.mod.common.api.events.pokeball.PokemonCatchRateEvent
 import com.cobblemon.mod.common.api.events.pokemon.PokemonCapturedEvent
+import com.cobblemon.mod.common.api.pokeball.PokeBalls
 import com.cobblemon.mod.common.api.storage.player.PlayerDataExtensionRegistry
 import com.cobblemon.mod.common.util.getPlayer
 import com.mojang.brigadier.Command
@@ -18,21 +20,21 @@ import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.event.server.ServerStartedEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.common.Mod
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
+import us.timinc.mc.cobblemon.counter.config.CounterConfig
 import us.timinc.mc.cobblemon.counter.store.CaptureCount
 import us.timinc.mc.cobblemon.counter.store.CaptureStreak
 import us.timinc.mc.cobblemon.counter.store.KoCount
 import us.timinc.mc.cobblemon.counter.store.KoStreak
 import java.util.*
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
-import us.timinc.mc.cobblemon.counter.config.CounterConfig
 
 @Mod(Counter.MOD_ID)
 object Counter {
     const val MOD_ID = "cobbled_counter"
 
     private var logger: Logger = LogManager.getLogger(MOD_ID)
-    private var config : CounterConfig = CounterConfig.Builder.load()
+    private var config: CounterConfig = CounterConfig.Builder.load()
 
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
     object Registration {
@@ -45,41 +47,37 @@ object Counter {
 
             CobblemonEvents.POKEMON_CAPTURED.subscribe { handlePokemonCapture(it) }
             CobblemonEvents.BATTLE_FAINTED.subscribe { handleWildDefeat(it) }
+            CobblemonEvents.POKEMON_CATCH_RATE.subscribe { repeatBallBooster(it) }
         }
 
         @SubscribeEvent
         fun onRegisterCommands(e: RegisterCommandsEvent) {
-            e.dispatcher.register(
-                literal("counter")
-                    .then(
-                        literal("ko")
-                            .then(
-                                literal("count")
-                                    .then(
-                                        argument("species", StringArgumentType.greedyString())
-                                            .executes{ checkKoCount(it) }
-                                    )
-                            )
-                            .then(
-                                literal("streak")
-                                    .executes { checkKoStreak(it) }
-                            )
-                    )
-                    .then(
-                        literal("capture")
-                            .then(
-                                literal("count")
-                                    .then(
-                                        argument("species", StringArgumentType.greedyString())
-                                            .executes { checkCaptureCount(it) }
-                                    )
-                            )
-                            .then(
-                                literal("streak")
-                                    .executes { checkCaptureStreak(it) }
-                            )
-                    )
-            )
+            e.dispatcher.register(literal("counter").then(literal("ko").then(literal("count").then(argument(
+                            "species",
+                            StringArgumentType.greedyString()
+                        ).executes {
+                                checkKoCount(
+                                    it
+                                )
+                            })).then(literal("streak").executes { checkKoStreak(it) }))
+                .then(literal("capture").then(literal("count").then(argument(
+                            "species",
+                            StringArgumentType.greedyString()
+                        ).executes { checkCaptureCount(it) }))
+                    .then(literal("streak").executes { checkCaptureStreak(it) })))
+        }
+    }
+
+    private fun repeatBallBooster(event: PokemonCatchRateEvent) {
+        val thrower = event.thrower
+
+        if (thrower !is Player) return
+
+        if (event.pokeBallEntity.pokeBall == PokeBalls.REPEAT_BALL && getPlayerCaptureCount(
+                thrower, event.pokemonEntity.pokemon.species.name.lowercase()
+            ) > 0
+        ) {
+            event.catchRate *= 2.5f
         }
     }
 
@@ -167,7 +165,13 @@ object Counter {
             data.extraData.getOrPut(CaptureStreak.NAME) { CaptureStreak() } as CaptureStreak
         captureStreak.add(species)
 
-        info("Player ${event.player.displayName.string} captured a $species streak(${captureStreak.count}) count(${captureCount.get(species)})")
+        info(
+            "Player ${event.player.displayName.string} captured a $species streak(${captureStreak.count}) count(${
+                captureCount.get(
+                    species
+                )
+            })"
+        )
 
         Cobblemon.playerData.saveSingle(data)
     }
@@ -188,7 +192,13 @@ object Counter {
             koCount.add(species)
             koStreak.add(species)
 
-            info("Player ${player.displayName.string} KO'd a $species streak(${koStreak.count}) count(${koCount.get(species)})")
+            info(
+                "Player ${player.displayName.string} KO'd a $species streak(${koStreak.count}) count(${
+                    koCount.get(
+                        species
+                    )
+                })"
+            )
 
             Cobblemon.playerData.saveSingle(data)
         }

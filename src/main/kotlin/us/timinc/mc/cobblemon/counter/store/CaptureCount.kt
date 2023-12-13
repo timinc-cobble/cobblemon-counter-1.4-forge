@@ -23,6 +23,10 @@ class CaptureCount : PlayerDataExtension {
         return captureCounts.getOrDefault(speciesName, 0)
     }
 
+    fun total(): Int {
+        return captureCounts.values.reduce { acc, i -> acc + i }
+    }
+
     override fun deserialize(json: JsonObject): CaptureCount {
         val defeatsData = json.getAsJsonObject("defeats")
         for (speciesName in defeatsData.keySet()) {

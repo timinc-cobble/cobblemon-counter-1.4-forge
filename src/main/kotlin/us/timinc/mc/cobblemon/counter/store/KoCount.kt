@@ -23,6 +23,10 @@ class KoCount : PlayerDataExtension {
         return koCounts.getOrDefault(speciesName, 0)
     }
 
+    fun total(): Int {
+        return koCounts.values.reduce { acc, i -> acc + i }
+    }
+
     override fun deserialize(json: JsonObject): KoCount {
         val defeatsData = json.getAsJsonObject("defeats")
         for (speciesName in defeatsData.keySet()) {

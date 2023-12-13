@@ -1,6 +1,8 @@
 {
-    "counter.ko.count": "You've ko'd %d %d",
-    "counter.ko.streak": "You have a ko streak of %d %d",
-    "counter.capture.count": "You've captured %d %d",
-    "counter.capture.streak": "You have a capture streak of %d %d"
+    "counter.ko.count": "%d has ko'd %d %d",
+    "counter.ko.streak": "%d has a ko streak of %d %d",
+    "counter.ko.total": "%d has ko'd %d total Pokemon",
+    "counter.capture.count": "%d has captured %d %d",
+    "counter.capture.streak": "%d has a capture streak of %d %d",
+    "counter.capture.total": "%d has captured %d total Pokemon"
 }

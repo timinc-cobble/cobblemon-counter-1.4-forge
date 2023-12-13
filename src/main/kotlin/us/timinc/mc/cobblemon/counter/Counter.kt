@@ -7,6 +7,7 @@ import com.cobblemon.mod.common.api.events.pokeball.PokemonCatchRateEvent
 import com.cobblemon.mod.common.api.events.pokemon.PokemonCapturedEvent
 import com.cobblemon.mod.common.api.pokeball.PokeBalls
 import com.cobblemon.mod.common.api.storage.player.PlayerDataExtensionRegistry
+import com.cobblemon.mod.common.command.argument.PokemonArgumentType
 import com.cobblemon.mod.common.util.getPlayer
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -14,6 +15,7 @@ import com.mojang.brigadier.context.CommandContext
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands.argument
 import net.minecraft.commands.Commands.literal
+import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.network.chat.Component
 import net.minecraft.world.entity.player.Player
 import net.minecraftforge.event.RegisterCommandsEvent
@@ -22,6 +24,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.common.Mod
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import us.timinc.mc.cobblemon.counter.api.CaptureApi
+import us.timinc.mc.cobblemon.counter.command.*
 import us.timinc.mc.cobblemon.counter.config.CounterConfig
 import us.timinc.mc.cobblemon.counter.store.CaptureCount
 import us.timinc.mc.cobblemon.counter.store.CaptureStreak
@@ -35,6 +39,7 @@ object Counter {
 
     private var logger: Logger = LogManager.getLogger(MOD_ID)
     private var config: CounterConfig = CounterConfig.Builder.load()
+    private var eventsSetup: Boolean = false
 
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
     object Registration {
@@ -45,26 +50,72 @@ object Counter {
             PlayerDataExtensionRegistry.register(CaptureCount.NAME, CaptureCount::class.java)
             PlayerDataExtensionRegistry.register(CaptureStreak.NAME, CaptureStreak::class.java)
 
-            CobblemonEvents.POKEMON_CAPTURED.subscribe { handlePokemonCapture(it) }
-            CobblemonEvents.BATTLE_FAINTED.subscribe { handleWildDefeat(it) }
-            CobblemonEvents.POKEMON_CATCH_RATE.subscribe { repeatBallBooster(it) }
+            if (!eventsSetup) {
+                CobblemonEvents.POKEMON_CAPTURED.subscribe { handlePokemonCapture(it) }
+                CobblemonEvents.BATTLE_FAINTED.subscribe { handleWildDefeat(it) }
+                CobblemonEvents.POKEMON_CATCH_RATE.subscribe { repeatBallBooster(it) }
+                eventsSetup = true
+            }
         }
 
         @SubscribeEvent
         fun onRegisterCommands(e: RegisterCommandsEvent) {
-            e.dispatcher.register(literal("counter").then(literal("ko").then(literal("count").then(argument(
-                            "species",
-                            StringArgumentType.greedyString()
-                        ).executes {
-                                checkKoCount(
-                                    it
-                                )
-                            })).then(literal("streak").executes { checkKoStreak(it) }))
-                .then(literal("capture").then(literal("count").then(argument(
-                            "species",
-                            StringArgumentType.greedyString()
-                        ).executes { checkCaptureCount(it) }))
-                    .then(literal("streak").executes { checkCaptureStreak(it) })))
+            e.dispatcher.register(
+                literal("counter").then(
+                    literal("ko").then(
+                        literal("count")
+                            .then(
+                                argument("species", PokemonArgumentType.pokemon())
+                                    .then(
+                                        argument("player", EntityArgument.player())
+                                            .executes { KoCountCommand.withPlayer(it) }
+                                    )
+                                    .executes { KoCountCommand.withoutPlayer(it) }
+                            )
+                    ).then(
+                        literal("streak")
+                            .then(
+                                argument("player", EntityArgument.player())
+                                    .executes { KoStreakCommand.withPlayer(it) }
+                            )
+                            .executes { KoStreakCommand.withoutPlayer(it) }
+
+                    ).then(
+                        literal("total")
+                            .then(
+                                argument("player", EntityArgument.player())
+                                    .executes { KoTotalCommand.withPlayer(it) }
+                            )
+                            .executes { KoTotalCommand.withoutPlayer(it) }
+                    )
+                ).then(
+                    literal("capture").then(
+                        literal("count")
+                            .then(
+                                argument("species", StringArgumentType.greedyString())
+                                    .then(
+                                        argument("player", EntityArgument.player())
+                                            .executes { CaptureCountCommand.withPlayer(it) }
+                                    )
+                                    .executes { CaptureCountCommand.withoutPlayer(it) }
+                            )
+                    ).then(
+                        literal("streak")
+                            .then(
+                                argument("player", EntityArgument.player())
+                                    .executes { CaptureStreakCommand.withPlayer(it) }
+                            )
+                            .executes { CaptureStreakCommand.withoutPlayer(it) }
+                    ).then(
+                        literal("total")
+                            .then(
+                                argument("player", EntityArgument.player())
+                                    .executes { CaptureTotalCommand.withPlayer(it) }
+                            )
+                            .executes { CaptureTotalCommand.withoutPlayer(it) }
+                    )
+                )
+            )
         }
     }
 
@@ -73,84 +124,12 @@ object Counter {
 
         if (thrower !is Player) return
 
-        if (event.pokeBallEntity.pokeBall == PokeBalls.REPEAT_BALL && getPlayerCaptureCount(
+        if (event.pokeBallEntity.pokeBall == PokeBalls.REPEAT_BALL && CaptureApi.getCount(
                 thrower, event.pokemonEntity.pokemon.species.name.lowercase()
             ) > 0
         ) {
             event.catchRate *= 2.5f
         }
-    }
-
-    private fun checkKoCount(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.player ?: return 0
-        val species = StringArgumentType.getString(ctx, "species")
-        val score = getPlayerKoCount(player, species)
-        ctx.source.sendSystemMessage(Component.translatable("counter.ko.count", score, species))
-        return Command.SINGLE_SUCCESS
-    }
-
-    private fun checkKoStreak(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.player ?: return 0
-        val streakData = getPlayerKoStreak(player)
-        val species = streakData.first
-        val score = streakData.second
-        ctx.source.sendSystemMessage(Component.translatable("counter.ko.streak", score, species))
-        return Command.SINGLE_SUCCESS
-    }
-
-    private fun checkCaptureCount(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.player ?: return 0
-        val species = StringArgumentType.getString(ctx, "species")
-        val score = getPlayerCaptureCount(player, species)
-        ctx.source.sendSystemMessage(Component.translatable("counter.capture.count", score, species))
-        return Command.SINGLE_SUCCESS
-    }
-
-    private fun checkCaptureStreak(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.player ?: return 0
-        val streakData = getPlayerCaptureStreak(player)
-        val species = streakData.first
-        val score = streakData.second
-        ctx.source.sendSystemMessage(Component.translatable("counter.capture.streak", score, species))
-        return Command.SINGLE_SUCCESS
-    }
-
-    @Suppress("unused")
-    fun getPlayerKoStreak(player: Player, species: String): Int {
-        val playerData = Cobblemon.playerData.get(player)
-        return (playerData.extraData.getOrPut(KoStreak.NAME) { KoStreak() } as KoStreak).get(species)
-    }
-
-    @Suppress("unused", "MemberVisibilityCanBePrivate")
-    fun getPlayerKoStreak(player: Player): Pair<String, Int> {
-        val playerData = Cobblemon.playerData.get(player)
-        val koStreakData = (playerData.extraData.getOrPut(KoStreak.NAME) { KoStreak() } as KoStreak)
-        return Pair(koStreakData.species, koStreakData.count)
-    }
-
-    @Suppress("unused", "MemberVisibilityCanBePrivate")
-    fun getPlayerKoCount(player: Player, species: String): Int {
-        val playerData = Cobblemon.playerData.get(player)
-        return (playerData.extraData.getOrPut(KoCount.NAME) { KoCount() } as KoCount).get(species)
-    }
-
-    @Suppress("unused")
-    fun getPlayerCaptureStreak(player: Player, species: String): Int {
-        val playerData = Cobblemon.playerData.get(player)
-        return (playerData.extraData.getOrPut(CaptureStreak.NAME) { CaptureStreak() } as CaptureStreak).get(species)
-    }
-
-    @Suppress("MemberVisibilityCanBePrivate")
-    fun getPlayerCaptureStreak(player: Player): Pair<String, Int> {
-        val playerData = Cobblemon.playerData.get(player)
-        val captureStreakData = (playerData.extraData.getOrPut(CaptureStreak.NAME) { CaptureStreak() } as CaptureStreak)
-        return Pair(captureStreakData.species, captureStreakData.count)
-    }
-
-    @Suppress("unused", "MemberVisibilityCanBePrivate")
-    fun getPlayerCaptureCount(player: Player, species: String): Int {
-        val playerData = Cobblemon.playerData.get(player)
-        return (playerData.extraData.getOrPut(CaptureCount.NAME) { CaptureCount() } as CaptureCount).get(species)
     }
 
     private fun handlePokemonCapture(event: PokemonCapturedEvent) {
@@ -204,7 +183,7 @@ object Counter {
         }
     }
 
-    fun info(msg: String) {
+    private fun info(msg: String) {
         if (!config.debug) return
         logger.info(msg)
     }

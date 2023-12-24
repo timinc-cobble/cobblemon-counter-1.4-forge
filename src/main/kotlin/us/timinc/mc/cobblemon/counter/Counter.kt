@@ -92,7 +92,7 @@ object Counter {
                     literal("capture").then(
                         literal("count")
                             .then(
-                                argument("species", StringArgumentType.greedyString())
+                                argument("species", PokemonArgumentType.pokemon())
                                     .then(
                                         argument("player", EntityArgument.player())
                                             .executes { CaptureCountCommand.withPlayer(it) }

@@ -4,5 +4,11 @@
     "counter.ko.total": "%d has ko'd %d total Pokemon",
     "counter.capture.count": "%d has captured %d %d",
     "counter.capture.streak": "%d has a capture streak of %d %d",
-    "counter.capture.total": "%d has captured %d total Pokemon"
+    "counter.capture.total": "%d has captured %d total Pokemon",
+    "counter.ko.count.reset": "KO count data reset for %d",
+    "counter.ko.streak.reset": "KO streak data reset for %d",
+    "counter.ko.all.reset": "KO data reset for %d",
+    "counter.capture.count.reset": "Capture count data reset for %d",
+    "counter.capture.streak.reset": "Capture streak data reset for %d",
+    "counter.capture.all.reset": "Capture data reset for %d"
 }

@@ -21,4 +21,21 @@ object KoApi {
         val koStreakData = (playerData.extraData.getOrPut(KoStreak.NAME) { KoStreak() } as KoStreak)
         return Pair(koStreakData.species, koStreakData.count)
     }
+
+    fun resetCount(player: Player) {
+        val playerData = Cobblemon.playerData.get(player)
+        val koCountData = (playerData.extraData.getOrPut(KoCount.NAME) { KoCount() } as KoCount)
+        koCountData.reset()
+    }
+
+    fun resetStreak(player: Player) {
+        val playerData = Cobblemon.playerData.get(player)
+        val koStreakData = (playerData.extraData.getOrPut(KoStreak.NAME) { KoStreak() } as KoStreak)
+        koStreakData.reset()
+    }
+
+    fun reset(player: Player) {
+        resetCount(player)
+        resetStreak(player)
+    }
 }

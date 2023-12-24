@@ -9,14 +9,9 @@ import com.cobblemon.mod.common.api.pokeball.PokeBalls
 import com.cobblemon.mod.common.api.storage.player.PlayerDataExtensionRegistry
 import com.cobblemon.mod.common.command.argument.PokemonArgumentType
 import com.cobblemon.mod.common.util.getPlayer
-import com.mojang.brigadier.Command
-import com.mojang.brigadier.arguments.StringArgumentType
-import com.mojang.brigadier.context.CommandContext
-import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands.argument
 import net.minecraft.commands.Commands.literal
 import net.minecraft.commands.arguments.EntityArgument
-import net.minecraft.network.chat.Component
 import net.minecraft.world.entity.player.Player
 import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.event.server.ServerStartedEvent
@@ -87,6 +82,29 @@ object Counter {
                                     .executes { KoTotalCommand.withPlayer(it) }
                             )
                             .executes { KoTotalCommand.withoutPlayer(it) }
+                    ).then(
+                        literal("reset")
+                            .requires { source -> source.hasPermission(2) }
+                            .then(
+                                literal("count")
+                                    .then(
+                                        argument("player", EntityArgument.player())
+                                            .executes { KoResetCommand.resetCount(it) }
+                                    )
+                            )
+                            .then(
+                                literal("streak")
+                                    .then(
+                                        argument("player", EntityArgument.player())
+                                            .executes { KoResetCommand.resetStreak(it) }
+                                    )
+                            )
+                            .then(
+                                literal("all").then(
+                                    argument("player", EntityArgument.player())
+                                        .executes { KoResetCommand.reset(it) }
+                                )
+                            )
                     )
                 ).then(
                     literal("capture").then(
@@ -113,6 +131,29 @@ object Counter {
                                     .executes { CaptureTotalCommand.withPlayer(it) }
                             )
                             .executes { CaptureTotalCommand.withoutPlayer(it) }
+                    ).then(
+                        literal("reset")
+                            .requires { source -> source.hasPermission(2) }
+                            .then(
+                                literal("count")
+                                    .then(
+                                        argument("player", EntityArgument.player())
+                                            .executes { CaptureResetCommand.resetCount(it) }
+                                    )
+                            )
+                            .then(
+                                literal("streak")
+                                    .then(
+                                        argument("player", EntityArgument.player())
+                                            .executes { CaptureResetCommand.resetStreak(it) }
+                                    )
+                            )
+                            .then(
+                                literal("all").then(
+                                    argument("player", EntityArgument.player())
+                                        .executes { CaptureResetCommand.reset(it) }
+                                )
+                            )
                     )
                 )
             )

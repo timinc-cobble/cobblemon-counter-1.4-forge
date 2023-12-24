@@ -24,7 +24,7 @@ class KoCount : PlayerDataExtension {
     }
 
     fun total(): Int {
-        return koCounts.values.reduce { acc, i -> acc + i }
+        return koCounts.values.reduceOrNull { acc, i -> acc + i } ?: 0
     }
 
     override fun deserialize(json: JsonObject): KoCount {

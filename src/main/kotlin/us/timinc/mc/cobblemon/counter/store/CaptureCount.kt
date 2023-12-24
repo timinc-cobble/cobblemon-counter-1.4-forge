@@ -24,7 +24,7 @@ class CaptureCount : PlayerDataExtension {
     }
 
     fun total(): Int {
-        return captureCounts.values.reduce { acc, i -> acc + i }
+        return captureCounts.values.reduceOrNull { acc, i -> acc + i } ?: 0
     }
 
     override fun deserialize(json: JsonObject): CaptureCount {

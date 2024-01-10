@@ -8,6 +8,8 @@ import java.io.PrintWriter
 
 class CounterConfig {
     val debug = false;
+    val broadcastKosToPlayer = true
+    val broadcastCapturesToPlayer = true
 
     class Builder {
         companion object {

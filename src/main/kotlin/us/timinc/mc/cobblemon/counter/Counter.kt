@@ -12,6 +12,7 @@ import com.cobblemon.mod.common.util.getPlayer
 import net.minecraft.commands.Commands.argument
 import net.minecraft.commands.Commands.literal
 import net.minecraft.commands.arguments.EntityArgument
+import net.minecraft.network.chat.Component
 import net.minecraft.world.entity.player.Player
 import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.event.server.ServerStartedEvent
@@ -192,19 +193,26 @@ object Counter {
                 )
             })"
         )
+        if (config.broadcastCapturesToPlayer) {
+            event.player.sendSystemMessage(
+                Component.translatable(
+                    "counter.capture.confirm", species, captureCount.get(species), captureStreak.count
+                )
+            )
+        }
 
         Cobblemon.playerData.saveSingle(data)
     }
 
-    private fun handleWildDefeat(battleVictoryEvent: BattleFaintedEvent) {
-        val targetEntity = battleVictoryEvent.killed.entity ?: return
+    private fun handleWildDefeat(event: BattleFaintedEvent) {
+        val targetEntity = event.killed.entity ?: return
         val targetPokemon = targetEntity.pokemon
         if (!targetPokemon.isWild()) {
             return
         }
         val species = targetPokemon.species.name.lowercase()
 
-        battleVictoryEvent.battle.playerUUIDs.mapNotNull(UUID::getPlayer).forEach { player ->
+        event.battle.playerUUIDs.mapNotNull(UUID::getPlayer).forEach { player ->
             val data = Cobblemon.playerData.get(player)
             val koCount: KoCount = data.extraData.getOrPut(KoCount.NAME) { KoCount() } as KoCount
             val koStreak: KoStreak = data.extraData.getOrPut(KoStreak.NAME) { KoStreak() } as KoStreak
@@ -219,6 +227,13 @@ object Counter {
                     )
                 })"
             )
+            if (config.broadcastKosToPlayer) {
+                player.sendSystemMessage(
+                    Component.translatable(
+                        "counter.ko.confirm", species, koCount.get(species), koStreak.count
+                    )
+                )
+            }
 
             Cobblemon.playerData.saveSingle(data)
         }

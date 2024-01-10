@@ -10,5 +10,7 @@
     "counter.ko.all.reset": "KO data reset for %d",
     "counter.capture.count.reset": "Capture count data reset for %d",
     "counter.capture.streak.reset": "Capture streak data reset for %d",
-    "counter.capture.all.reset": "Capture data reset for %d"
+    "counter.capture.all.reset": "Capture data reset for %d",
+    "counter.capture.confirm": "Captured %d (%d/%d)",
+    "counter.ko.confirm": "KO'd %d (%d/%d)"
 }

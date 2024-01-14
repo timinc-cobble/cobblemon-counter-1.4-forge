@@ -4,7 +4,7 @@ license = "MIT"
 
 [[mods]]
 modId = "cobbled_counter"
-version = "1.4-forge-1.4.0"
+version = "1.4-forge-1.5.0"
 displayName = "Cobblemon Counter"
 description = '''
 Counts things in Cobblemon
